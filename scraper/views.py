@@ -15,14 +15,22 @@ logger = logging.getLogger(__name__)
 
 def home(request):
     """Home page with scraping interface"""
-    # Get recent sessions
-    recent_sessions = ScrapingSession.objects.all()[:5]
-    
-    context = {
-        'recent_sessions': recent_sessions,
-        'total_sessions': ScrapingSession.objects.count(),
-        'successful_sessions': ScrapingSession.objects.filter(status='success').count(),
-    }
+    try:
+        # Get recent sessions
+        recent_sessions = ScrapingSession.objects.all()[:5]
+        
+        context = {
+            'recent_sessions': recent_sessions,
+            'total_sessions': ScrapingSession.objects.count(),
+            'successful_sessions': ScrapingSession.objects.filter(status='success').count(),
+        }
+    except Exception as e:
+        # Handle database not ready
+        context = {
+            'recent_sessions': [],
+            'total_sessions': 0,
+            'successful_sessions': 0,
+        }
     
     return render(request, 'scraper/home.html', context)
 
@@ -66,33 +74,42 @@ def session_detail(request, session_id):
 
 def sessions_list(request):
     """List all scraping sessions"""
-    sessions = ScrapingSession.objects.all()
-    
-    # Search functionality
-    search = request.GET.get('search', '')
-    if search:
-        sessions = sessions.filter(
-            Q(session_id__icontains=search) |
-            Q(status__icontains=search) |
-            Q(error_message__icontains=search)
-        )
-    
-    # Status filter
-    status_filter = request.GET.get('status', '')
-    if status_filter:
-        sessions = sessions.filter(status=status_filter)
-    
-    # Pagination
-    paginator = Paginator(sessions, 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'page_obj': page_obj,
-        'search': search,
-        'status_filter': status_filter,
-        'status_choices': ScrapingSession.STATUS_CHOICES,
-    }
+    try:
+        sessions = ScrapingSession.objects.all()
+        
+        # Search functionality
+        search = request.GET.get('search', '')
+        if search:
+            sessions = sessions.filter(
+                Q(session_id__icontains=search) |
+                Q(status__icontains=search) |
+                Q(error_message__icontains=search)
+            )
+        
+        # Status filter
+        status_filter = request.GET.get('status', '')
+        if status_filter:
+            sessions = sessions.filter(status=status_filter)
+        
+        # Pagination
+        paginator = Paginator(sessions, 20)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        
+        context = {
+            'page_obj': page_obj,
+            'search': search,
+            'status_filter': status_filter,
+            'status_choices': ScrapingSession.STATUS_CHOICES,
+        }
+    except Exception as e:
+        # Handle database not ready
+        context = {
+            'page_obj': None,
+            'search': '',
+            'status_filter': '',
+            'status_choices': ScrapingSession.STATUS_CHOICES,
+        }
     
     return render(request, 'scraper/sessions_list.html', context)
 
@@ -174,20 +191,30 @@ def api_session_data(request, session_id):
 
 def dashboard(request):
     """Dashboard with statistics"""
-    total_sessions = ScrapingSession.objects.count()
-    successful_sessions = ScrapingSession.objects.filter(status='success').count()
-    failed_sessions = ScrapingSession.objects.filter(status='failed').count()
-    blocked_sessions = ScrapingSession.objects.filter(status='blocked').count()
-    
-    # Recent sessions
-    recent_sessions = ScrapingSession.objects.all()[:10]
-    
-    context = {
-        'total_sessions': total_sessions,
-        'successful_sessions': successful_sessions,
-        'failed_sessions': failed_sessions,
-        'blocked_sessions': blocked_sessions,
-        'recent_sessions': recent_sessions,
-    }
+    try:
+        total_sessions = ScrapingSession.objects.count()
+        successful_sessions = ScrapingSession.objects.filter(status='success').count()
+        failed_sessions = ScrapingSession.objects.filter(status='failed').count()
+        blocked_sessions = ScrapingSession.objects.filter(status='blocked').count()
+        
+        # Recent sessions
+        recent_sessions = ScrapingSession.objects.all()[:10]
+        
+        context = {
+            'total_sessions': total_sessions,
+            'successful_sessions': successful_sessions,
+            'failed_sessions': failed_sessions,
+            'blocked_sessions': blocked_sessions,
+            'recent_sessions': recent_sessions,
+        }
+    except Exception as e:
+        # Handle database not ready
+        context = {
+            'total_sessions': 0,
+            'successful_sessions': 0,
+            'failed_sessions': 0,
+            'blocked_sessions': 0,
+            'recent_sessions': [],
+        }
     
     return render(request, 'scraper/dashboard.html', context)
