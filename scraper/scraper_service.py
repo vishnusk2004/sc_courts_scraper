@@ -72,7 +72,7 @@ class SCCourtsScraperService:
             return False
     
     def scrape_website(self, session):
-        """Main scraping function"""
+        """Main scraping function using complete session approach"""
         try:
             # Update session status
             session.status = 'running'
@@ -80,57 +80,23 @@ class SCCourtsScraperService:
             session.user_agent = self.headers.get('User-Agent', '')
             session.save()
             
-            # Make initial request
-            if not self.make_initial_request(session):
-                logger.warning("Initial request failed, proceeding anyway")
+            # Use complete session approach
+            result = self.run_complete_session()
             
-            # Make main request
-            response = requests.get(self.target_url, headers=self.headers, timeout=30)
-            
-            logger.info(f"Main request status: {response.status_code}")
-            
-            if response.status_code == 200:
-                # Check for Incapsula protection
-                if 'Incapsula' in response.text or 'incapsula' in response.text.lower():
-                    session.status = 'blocked'
-                    session.error_message = 'Incapsula protection detected'
-                    session.raw_html = response.text
-                    
-                    # Save protection page details for analysis
-                    protection_data = self.analyze_protection_page(response.text)
-                    session.parsed_data = protection_data
-                    session.save()
-                    return False
-                
-                # Parse the content
-                parsed_data = self.parse_content(response.text)
-                
-                # Update session with results
+            if result:
                 session.status = 'success'
-                session.raw_html = response.text
-                session.parsed_data = parsed_data
-                session.forms_count = len(parsed_data.get('forms', []))
-                session.inputs_count = len(parsed_data.get('inputs', []))
-                session.selects_count = len(parsed_data.get('selects', []))
-                session.links_count = len(parsed_data.get('links', []))
-                session.scripts_count = len(parsed_data.get('scripts', []))
+                session.raw_html = result.get('html', '')
+                session.parsed_data = result.get('data', {})
+                session.forms_count = len(result.get('data', {}).get('forms', []))
+                session.inputs_count = len(result.get('data', {}).get('inputs', []))
+                session.selects_count = len(result.get('data', {}).get('selects', []))
+                session.links_count = len(result.get('data', {}).get('links', []))
+                session.scripts_count = len(result.get('data', {}).get('scripts', []))
                 session.save()
-                
-                # Extract court records if any
-                self.extract_court_records(session, parsed_data)
-                
                 return True
-                
-            elif response.status_code == 403:
-                session.status = 'blocked'
-                session.error_message = '403 Forbidden - IP blocked'
-                session.raw_html = response.text
-                session.save()
-                return False
             else:
-                session.status = 'failed'
-                session.error_message = f'HTTP {response.status_code}'
-                session.raw_html = response.text
+                session.status = 'blocked'
+                session.error_message = 'Complete session failed - likely IP blocking'
                 session.save()
                 return False
                 
@@ -139,6 +105,33 @@ class SCCourtsScraperService:
             session.status = 'failed'
             session.error_message = str(e)
             session.save()
+            return False
+    
+    def run_complete_session(self):
+        """Run the complete session sequence"""
+        try:
+            # Create session with proper headers
+            session = requests.Session()
+            session.headers.update(self.headers)
+            
+            # Make main request
+            response = session.get(self.target_url, timeout=30)
+            
+            if response.status_code == 200:
+                if 'Incapsula' in response.text:
+                    return False
+                else:
+                    # Parse successful response
+                    parsed_data = self.parse_content(response.text)
+                    return {
+                        'html': response.text,
+                        'data': parsed_data
+                    }
+            else:
+                return False
+                
+        except Exception as e:
+            logger.error(f"Complete session error: {e}")
             return False
     
     def analyze_protection_page(self, html_content):
