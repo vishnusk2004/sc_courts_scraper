@@ -91,9 +91,14 @@ class SCCourtsScraperService:
             
             if response.status_code == 200:
                 # Check for Incapsula protection
-                if 'Incapsula' in response.text:
+                if 'Incapsula' in response.text or 'incapsula' in response.text.lower():
                     session.status = 'blocked'
                     session.error_message = 'Incapsula protection detected'
+                    session.raw_html = response.text
+                    
+                    # Save protection page details for analysis
+                    protection_data = self.analyze_protection_page(response.text)
+                    session.parsed_data = protection_data
                     session.save()
                     return False
                 
@@ -119,11 +124,13 @@ class SCCourtsScraperService:
             elif response.status_code == 403:
                 session.status = 'blocked'
                 session.error_message = '403 Forbidden - IP blocked'
+                session.raw_html = response.text
                 session.save()
                 return False
             else:
                 session.status = 'failed'
                 session.error_message = f'HTTP {response.status_code}'
+                session.raw_html = response.text
                 session.save()
                 return False
                 
@@ -133,6 +140,72 @@ class SCCourtsScraperService:
             session.error_message = str(e)
             session.save()
             return False
+    
+    def analyze_protection_page(self, html_content):
+        """Analyze the protection page to understand what's blocking access"""
+        try:
+            soup = BeautifulSoup(html_content, 'html.parser')
+            
+            # Look for common protection indicators
+            protection_indicators = {
+                'incapsula': 'Incapsula' in html_content,
+                'cloudflare': 'Cloudflare' in html_content,
+                'ddos_guard': 'DDoS-Guard' in html_content,
+                'sucuri': 'Sucuri' in html_content,
+                'recaptcha': 'reCAPTCHA' in html_content or 'recaptcha' in html_content.lower(),
+                'hcaptcha': 'hCaptcha' in html_content or 'hcaptcha' in html_content.lower(),
+                'challenge': 'challenge' in html_content.lower(),
+                'verification': 'verification' in html_content.lower(),
+                'robot_check': 'robot' in html_content.lower() or 'bot' in html_content.lower(),
+                'captcha': 'captcha' in html_content.lower(),
+            }
+            
+            # Look for specific elements
+            forms = soup.find_all('form')
+            inputs = soup.find_all('input')
+            buttons = soup.find_all('button')
+            scripts = soup.find_all('script')
+            
+            # Look for specific protection elements
+            protection_elements = {
+                'challenge_forms': [form for form in forms if any(keyword in form.get_text().lower() for keyword in ['challenge', 'verify', 'captcha', 'robot'])],
+                'captcha_inputs': [input_tag for input_tag in inputs if input_tag.get('type') in ['text', 'hidden'] and any(keyword in str(input_tag).lower() for keyword in ['captcha', 'challenge', 'verify'])],
+                'verification_buttons': [button for button in buttons if any(keyword in button.get_text().lower() for keyword in ['verify', 'continue', 'proceed', 'submit'])],
+                'protection_scripts': [script for script in scripts if any(keyword in script.get_text().lower() for keyword in ['incapsula', 'cloudflare', 'challenge', 'captcha'])],
+            }
+            
+            # Extract page title and meta information
+            title = soup.title.get_text(strip=True) if soup.title else ''
+            meta_description = soup.find('meta', attrs={'name': 'description'})
+            meta_description = meta_description.get('content', '') if meta_description else ''
+            
+            # Look for specific text content
+            page_text = soup.get_text()
+            protection_texts = {
+                'access_denied': 'access denied' in page_text.lower(),
+                'blocked': 'blocked' in page_text.lower(),
+                'forbidden': 'forbidden' in page_text.lower(),
+                'not_authorized': 'not authorized' in page_text.lower(),
+                'security_check': 'security check' in page_text.lower(),
+                'verification_required': 'verification required' in page_text.lower(),
+            }
+            
+            return {
+                'protection_indicators': protection_indicators,
+                'protection_elements': protection_elements,
+                'protection_texts': protection_texts,
+                'page_title': title,
+                'meta_description': meta_description,
+                'total_forms': len(forms),
+                'total_inputs': len(inputs),
+                'total_buttons': len(buttons),
+                'total_scripts': len(scripts),
+                'page_text_preview': page_text[:500] + '...' if len(page_text) > 500 else page_text,
+            }
+            
+        except Exception as e:
+            logger.error(f"Error analyzing protection page: {e}")
+            return {'error': str(e)}
     
     def parse_content(self, html_content):
         """Parse HTML content and extract useful data"""

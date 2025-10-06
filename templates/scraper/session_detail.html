@@ -81,6 +81,100 @@
             </div>
         </div>
         
+        <!-- Protection Analysis -->
+        {% if session.status == 'blocked' and session.parsed_data %}
+        <div class="card shadow mt-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-shield-alt me-2"></i>Protection Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>Protection Detected</h6>
+                    <p class="mb-0">{{ session.error_message }}</p>
+                </div>
+                
+                <!-- Protection Indicators -->
+                {% if session.parsed_data.protection_indicators %}
+                <div class="mb-4">
+                    <h6><i class="fas fa-search me-2"></i>Protection Indicators</h6>
+                    <div class="row">
+                        {% for indicator, value in session.parsed_data.protection_indicators.items %}
+                        <div class="col-md-4 mb-2">
+                            <span class="badge {% if value %}bg-danger{% else %}bg-secondary{% endif %}">
+                                {{ indicator|title }}: {% if value %}Yes{% else %}No{% endif %}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Page Information -->
+                {% if session.parsed_data.page_title %}
+                <div class="mb-4">
+                    <h6><i class="fas fa-info-circle me-2"></i>Page Information</h6>
+                    <p><strong>Title:</strong> {{ session.parsed_data.page_title }}</p>
+                    {% if session.parsed_data.meta_description %}
+                    <p><strong>Description:</strong> {{ session.parsed_data.meta_description }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <!-- Protection Elements -->
+                {% if session.parsed_data.protection_elements %}
+                <div class="mb-4">
+                    <h6><i class="fas fa-cogs me-2"></i>Protection Elements Found</h6>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Challenge Forms:</strong> {{ session.parsed_data.protection_elements.challenge_forms|length }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Captcha Inputs:</strong> {{ session.parsed_data.protection_elements.captcha_inputs|length }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Verification Buttons:</strong> {{ session.parsed_data.protection_elements.verification_buttons|length }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Protection Scripts:</strong> {{ session.parsed_data.protection_elements.protection_scripts|length }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Page Text Preview -->
+                {% if session.parsed_data.page_text_preview %}
+                <div class="mb-4">
+                    <h6><i class="fas fa-file-text me-2"></i>Page Content Preview</h6>
+                    <div class="bg-light p-3 rounded">
+                        <pre class="mb-0">{{ session.parsed_data.page_text_preview }}</pre>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Raw HTML -->
+                <div class="mt-4">
+                    <h6><i class="fas fa-code me-2"></i>Raw HTML</h6>
+                    <div class="accordion" id="rawHtmlAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="rawHtml">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRawHtml">
+                                    View Raw HTML ({{ session.raw_html|length }} characters)
+                                </button>
+                            </h2>
+                            <div id="collapseRawHtml" class="accordion-collapse collapse" data-bs-parent="#rawHtmlAccordion">
+                                <div class="accordion-body">
+                                    <pre><code>{{ session.raw_html|truncatechars:2000 }}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
         <!-- Parsed Data -->
         {% if session.status == 'success' and session.parsed_data %}
         <div class="card shadow mt-4">
