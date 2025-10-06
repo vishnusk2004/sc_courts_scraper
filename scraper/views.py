@@ -118,6 +118,17 @@ def sessions_list(request):
 def api_start_scraping(request):
     """API endpoint to start scraping"""
     try:
+        # Check if database tables exist, if not create them
+        from django.db import connection
+        from django.core.management import call_command
+        
+        # Check if tables exist
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='scraper_scrapingsession';")
+            if not cursor.fetchone():
+                # Tables don't exist, run migrations
+                call_command('migrate')
+        
         scraper_service = SCCourtsScraperService()
         session, success = scraper_service.run_scraping()
         
