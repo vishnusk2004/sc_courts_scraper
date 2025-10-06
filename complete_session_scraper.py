@@ -31,7 +31,7 @@ class CompleteSessionScraper:
             'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36'
         })
         
-        # Fresh cookies from your working session
+        # ULTRA FRESH cookies from your working session (just updated!)
         self.cookies = {
             'visid_incap_2861446': 'hKN0Azf6QT+8enpyV19ER4fN42gAAAAAQUIPAAAAAACR6zdhUKI2jlkgNHsrL3Bv',
             'incap_ses_1404_2861446': 'rM9PNXoURW0t/xOtwAJ8E4fN42gAAAAAXyj7QPjZkSUD3mjjSvk2rQ==',
@@ -39,7 +39,7 @@ class CompleteSessionScraper:
             'nlbi_2861446': '+HS3b/n7uXSv2xVG11Z32gAAAAA5qU31PvEhdqjBXrQAdQuu',
             'reese84': '3:txBu7lFW+0YvvlglKJUKnA==:23utpAJS7nuioepyk7wdq2t50ro/pLbX04QmHt8XWlG793BH0QLBQp5mKpjLdf/HNKicG2z3EUIETFkYJPEjKtja6ZX+9eGnFZByWOQJf5/Ld/dTQitlgjd+f7tBW9P9jM+RD1sA1jSMaQ7IvD02Tcyqn149anXwpeDhLFHWWUywUzxRLs0ZIHZUY6ASPT1h0NGFu2h167viWYwuWuocsM68xGuxfjAB5n4mE/stRRwLX+vT2m4VvSvPEOmums6ARpLGWLXjvlbxbFwinkMHNTrY1drluV9EgKzYIwATIBLatUKwy9VCRtUerHzwrohHqOaspX3233eEGPyTURLZQpQPiF4F4SG6fDCLrwNlCbvh2asNM5kfP1QNv+5ZFYZHKL6sLTBtwcDC7AEArvtX0oPoVHqXp88VmvTRVrc7jgxRbhBJ5oIC/weMu58e/yAJa5gUL2YtuuEI3kiJY4OabMGvuwoMZO9QjFv//V7ILcxxpXwyZvTh+FlSjqFk8D8lRPFI03sRuJQHnVpleac2nQ==:us8TL1eG570Tm/x2vDeH1VEFK8W5a3XxiDiWkKnmkCc=',
             'ASP.NET_SessionId': 'aqsqu0kdg0r1kdgdvxh0fzhl',
-            'nlbi_2861446_2147483392': 'zwn1aWMv2BkSFiBI11Z32gAAAAA6siGRdo/hJELFJov/qqoZ'
+            'nlbi_2861446_2147483392': 'ERBGIdnkxCQCx1ha11Z32gAAAACJhpX4qB43jdA74ZvR+fTa'  # UPDATED!
         }
     
     def human_delay(self, min_delay=0.5, max_delay=2.0):
