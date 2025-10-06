@@ -1,0 +1,188 @@
+{% extends 'scraper/base.html' %}
+
+{% block title %}Sessions - SC Courts Scraper{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-list me-2"></i>All Sessions</h2>
+            <a href="{% url 'scraper:home' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Start New Session
+            </a>
+        </div>
+        
+        <!-- Filters -->
+        <div class="card shadow mb-4">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ search }}" placeholder="Search sessions...">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">All Statuses</option>
+                            {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-search me-2"></i>Filter
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <a href="{% url 'scraper:sessions_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Clear
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Sessions List -->
+        <div class="card shadow">
+            <div class="card-body">
+                {% if page_obj %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Session ID</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Duration</th>
+                                <th>Results</th>
+                                <th>IP</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for session in page_obj %}
+                            <tr>
+                                <td>
+                                    <code>{{ session.session_id|slice:":12" }}...</code>
+                                </td>
+                                <td>
+                                    <span class="badge 
+                                        {% if session.status == 'success' %}bg-success
+                                        {% elif session.status == 'failed' %}bg-danger
+                                        {% elif session.status == 'blocked' %}bg-warning
+                                        {% elif session.status == 'running' %}bg-info
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ session.status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <small>{{ session.created_at|date:"M d, Y H:i" }}</small>
+                                </td>
+                                <td>
+                                    <small>{{ session.updated_at|timesince:session.created_at }}</small>
+                                </td>
+                                <td>
+                                    {% if session.status == 'success' %}
+                                    <small>
+                                        <span class="badge bg-primary">{{ session.forms_count }}F</span>
+                                        <span class="badge bg-info">{{ session.inputs_count }}I</span>
+                                        <span class="badge bg-success">{{ session.links_count }}L</span>
+                                    </small>
+                                    {% elif session.error_message %}
+                                    <small class="text-danger">{{ session.error_message|truncatechars:30 }}</small>
+                                    {% else %}
+                                    <small class="text-muted">-</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ session.ip_address|default:"N/A" }}</small>
+                                </td>
+                                <td>
+                                    <a href="{% url 'scraper:session_detail' session.session_id %}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Sessions pagination" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        <li class="page-item active">
+                            <span class="page-link">
+                                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+                        
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No sessions found</h5>
+                    <p class="text-muted">Start your first scraping session to see results here.</p>
+                    <a href="{% url 'scraper:home' %}" class="btn btn-primary">
+                        <i class="fas fa-play me-2"></i>Start Scraping
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refresh for running sessions
+    document.addEventListener('DOMContentLoaded', function() {
+        const runningSessions = document.querySelectorAll('.badge.bg-info');
+        if (runningSessions.length > 0) {
+            setTimeout(() => location.reload(), 10000);
+        }
+    });
+</script>
+{% endblock %}

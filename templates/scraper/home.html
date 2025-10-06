@@ -1,0 +1,177 @@
+{% extends 'scraper/base.html' %}
+
+{% block title %}Home - SC Courts Scraper{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Main Scraping Interface -->
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-play-circle me-2"></i>Start Scraping
+                </h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Click the button below to start scraping the SC Courts website. The scraping will happen from our US server.</p>
+                
+                <div class="d-grid gap-2">
+                    <button id="startScrapingBtn" class="btn btn-scrape btn-lg" onclick="startScraping()">
+                        <i class="fas fa-rocket me-2"></i>Start Scraping Now
+                    </button>
+                </div>
+                
+                <div class="mt-4">
+                    <h6>What happens when you click:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success me-2"></i>Connects to SC Courts website from US server</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Extracts all forms, inputs, and data</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Stores results in our database</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Shows you the results in real-time</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Sessions -->
+        {% if recent_sessions %}
+        <div class="card shadow mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-history me-2"></i>Recent Sessions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for session in recent_sessions %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card session-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="card-title">
+                                            <a href="{% url 'scraper:session_detail' session.session_id %}" class="text-decoration-none">
+                                                Session {{ session.session_id|slice:":8" }}...
+                                            </a>
+                                        </h6>
+                                        <p class="card-text text-muted small">
+                                            {{ session.created_at|date:"M d, Y H:i" }}
+                                        </p>
+                                    </div>
+                                    <span class="badge status-badge 
+                                        {% if session.status == 'success' %}bg-success
+                                        {% elif session.status == 'failed' %}bg-danger
+                                        {% elif session.status == 'blocked' %}bg-warning
+                                        {% elif session.status == 'running' %}bg-info
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ session.status|title }}
+                                    </span>
+                                </div>
+                                
+                                {% if session.status == 'success' %}
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-table me-1"></i>{{ session.forms_count }} forms
+                                        <i class="fas fa-keyboard me-1 ms-2"></i>{{ session.inputs_count }} inputs
+                                        <i class="fas fa-link me-1 ms-2"></i>{{ session.links_count }} links
+                                    </small>
+                                </div>
+                                {% elif session.error_message %}
+                                <div class="mt-2">
+                                    <small class="text-danger">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>{{ session.error_message|truncatechars:50 }}
+                                    </small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="text-center mt-3">
+                    <a href="{% url 'scraper:sessions_list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-list me-2"></i>View All Sessions
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Statistics -->
+        <div class="card shadow">
+            <div class="card-header stats-card">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Statistics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h3 class="text-primary">{{ total_sessions }}</h3>
+                        <p class="mb-0">Total Sessions</p>
+                    </div>
+                    <div class="col-6">
+                        <h3 class="text-success">{{ successful_sessions }}</h3>
+                        <p class="mb-0">Successful</p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'scraper:dashboard' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-chart-line me-2"></i>View Dashboard
+                    </a>
+                    <a href="{% url 'scraper:sessions_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-list me-2"></i>All Sessions
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Server Info -->
+        <div class="card shadow mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-server me-2"></i>Server Information
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Location:</strong><br>
+                        <span class="text-success">🇺🇸 United States</span>
+                    </div>
+                    <div class="col-6">
+                        <strong>Status:</strong><br>
+                        <span class="text-success">✅ Online</span>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <p class="small text-muted mb-0">
+                    <i class="fas fa-info-circle me-1"></i>
+                    This application runs on a US server, allowing access to the SC Courts website without geo-blocking issues.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refresh for running sessions
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if any sessions are running and refresh if needed
+        const runningSessions = document.querySelectorAll('.badge.bg-info');
+        if (runningSessions.length > 0) {
+            setTimeout(() => location.reload(), 5000);
+        }
+    });
+</script>
+{% endblock %}
