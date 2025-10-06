@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: sc-courts-scraper
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements_django.txt && python manage.py migrate && python manage.py collectstatic --noinput"
+    startCommand: "gunicorn sc_courts_app.wsgi:application"
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: False
+      - key: ALLOWED_HOSTS
+        value: your-app-name.onrender.com
